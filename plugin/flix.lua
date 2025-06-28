@@ -6,14 +6,14 @@ vim.filetype.add({
 })
 
 -- auto commands
-local flix = vim.api.nvim_create_augroup("flix", { clear = true })
-local flix_lsp = vim.api.nvim_create_augroup("flix", { clear = true })
+local flix = vim.api.nvim_create_augroup("flix.ft", { clear = true })
+local flix_lsp = vim.api.nvim_create_augroup("flix.lsp", { clear = true })
 -- enter flix buffer
 vim.api.nvim_create_autocmd("FileType", {
   group = flix,
   pattern = "flix",
   callback = function(args)
-    vim.api.nvim_clear_autocmds({ group = flix_lsp }) -- prevent duplicates
+    vim.api.nvim_clear_autocmds({ group = flix_lsp, buffer = args.buf }) -- prevent duplicates
     vim.opt_local.tabstop = 4
     vim.opt_local.shiftwidth = 4
     vim.opt_local.softtabstop = 4
@@ -21,7 +21,7 @@ vim.api.nvim_create_autocmd("FileType", {
     -- refresh codelens for semantic highlighting
     vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
       group = flix_lsp,
-      pattern = "<buffer>",
+      buffer = args.buf,
       callback = function()
         vim.lsp.codelens.refresh({ bufnr = args.buf })
       end

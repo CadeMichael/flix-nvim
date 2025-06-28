@@ -4,10 +4,10 @@
 
 ## Functionality
 
-- Flix leverages LSP for syntax highlighting and as a result a dependency of **flix.nvim** is [lspconfig](https://github.com/neovim/nvim-lspconfig)
+- Flix leverages LSP for syntax highlighting, it uses the `vim.lsp.enable` functionality introduced in nvim **versions 0.11**
 
 - this plugin serves three main purposes
-    1. simplify setting up `lspconfig` for Flix
+    1. create a lsp configuration for Flix
     2. set the Flix filetype and language defaults
     3. lua functions for interacting with the Flix cli
 
@@ -18,17 +18,14 @@
 
 ## LSP
 
-- to get the lsp setup you must import the `flix.lsp` module and call it's functions
-    - it is recommended to do this where you setup other LSP servers, usually when configuring `lspconfig`, so that you can use the same `capabilities` and `on_attatch` as used accross your configuration.
-    - for reference
-        - `capabilities` => sets up your completion functionality depending on your plugin of choice
-        - `on_attach` => sets up your keybindings for LSP functionality
+- to get the lsp setup you simply call `require("flix").setup()`
+    - do this before enabling the lsp (`vim.lsp.enable("flix")`)
 
 ```lua
 -- create Flix config
-require("flix.lsp").set_config()
--- setup server
-require("flix.lsp").flix_lsp(capabilities, on_attach)
+require("flix").setup()
+-- enable server
+vim.lsp.enable("flix")
 ```
 
 ## Commands
@@ -51,90 +48,55 @@ vim.keymap.set('n', '<Space>bt', function() flix_cmd("test") end,
 ## lspconfig setup example
 
 ```lua
-  {
-    'neovim/nvim-lspconfig',
-    dependencies = {
-      'saghen/blink.cmp',
-    },
-    config = function()
-      -- show lsp diagnostics by highlighting line numbers
-      vim.diagnostic.config({
-        signs = {
-          text = {
-            [vim.diagnostic.severity.ERROR] = '',
-            [vim.diagnostic.severity.WARN] = '',
-          },
-          numhl = {
-            [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
-            [vim.diagnostic.severity.WARN] = 'WarningMsg',
-          },
+{
+  'neovim/nvim-lspconfig',
+  dependencies = {
+    'saghen/blink.cmp',
+  },
+  config = function()
+    -- show lsp diagnostics by highlighting line numbers
+    vim.diagnostic.config({
+      signs = {
+        text = {
+          [vim.diagnostic.severity.ERROR] = '',
+          [vim.diagnostic.severity.WARN] = '',
         },
-        severity_sort = true,
-      })
-      local on_attach = function(_, bufnr)
-        -- Mappings.
+        numhl = {
+          [vim.diagnostic.severity.ERROR] = 'ErrorMsg',
+          [vim.diagnostic.severity.WARN] = 'WarningMsg',
+        },
+      },
+      severity_sort = true,
+    })
+
+    -- customized mappings.
+    vim.api.nvim_create_autocmd('LspAttach', {
+      group = vim.api.nvim_create_augroup('my.lsp', {}),
+      callback = function(args)
         local function get_opts(desc)
-          return { desc = desc, buffer = bufnr, noremap = true, silent = true }
+          return { desc = desc, buffer = args.buf, noremap = true, silent = true }
         end
-        -- formatting
-        vim.keymap.set(
-          'n',
-          '<space>=',
-          function()
-            vim.lsp.buf.format()
-          end,
-          get_opts('format buffer')
-        )
-        -- renaming
-        vim.keymap.set(
-          'n',
-          '<space>rn',
-          function()
-            vim.lsp.buf.rename()
-          end,
-          get_opts('rename')
-        )
-        -- gotos
-        vim.keymap.set(
-          'n',
-          'gd',
-          function()
-            vim.lsp.buf.definition()
-          end,
-          get_opts('goto definition')
-        )
-        vim.keymap.set(
-          'n',
-          '<space>ee',
-          vim.diagnostic.open_float,
-          get_opts('diagnostic open float')
-        )
-        vim.keymap.set('n', '[e', vim.diagnostic.goto_prev, get_opts('prev diagnostic'))
-        vim.keymap.set('n', ']e', vim.diagnostic.goto_next, get_opts('next diagnostic'))
+        local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+        if client:supports_method('textDocument/format') then
+          vim.keymap.set('n', '<space>=', vim.lsp.buf.format, get_opts('format buffer'))
+        end
+        if client:supports_method('textDocument/rename') then
+          vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, get_opts('rename'))
+        end
+        vim.keymap.set('n', '<space>ee', vim.diagnostic.open_float, get_opts('diagnostic open float'))
       end
+    })
 
-      -- import lsp modules
-      local capabilities = require('blink.cmp').get_lsp_capabilities()
-      local lsp = require('lspconfig')
-      local lsp_configs = require('lspconfig.configs')
-      local lsp_util = require('lspconfig.util')
+    -- add flix lsp config
+    require("flix").setup()
 
-      --> lua
-      -- neovim lsp
-      lsp.lua_ls.setup {
-        capabilities = capabilities,
-        on_attach = on_attach
-      }
-      --> C
-      lsp.clangd.setup({
-        capabilities = capabilities,
-        on_attach = on_attach
-      })
-      --> Flix
-      -- create flix config
-      require("flix.lsp").set_config()
-      -- setup server
-      require("flix.lsp").flix_lsp(capabilities, on_attach)
-    end
-  }
+    local lsp_langs = {
+      "flix",
+      -- other enabled languages...
+    }
+
+    -- enable all lsp supported languages
+    vim.lsp.enable(lsp_langs)
+  end,
+}  
 ```
