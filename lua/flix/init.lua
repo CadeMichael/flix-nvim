@@ -1,9 +1,9 @@
 local M = {}
 
-function M.setup()
+function M.setup(opts)
   print(vim.fs.root(0, { 'flix.toml' }))
   if not vim.lsp.config["flix"] then
-    vim.lsp.config('flix', {
+    vim.lsp.config('flix', opts or {
       cmd = { "java", "-jar", "flix.jar", "lsp" },
       filetypes = { "flix" },
       root_markers = { "flix.toml" },
