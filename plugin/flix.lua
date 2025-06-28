@@ -18,7 +18,7 @@ vim.api.nvim_create_autocmd("FileType", {
     vim.opt_local.shiftwidth = 4
     vim.opt_local.softtabstop = 4
     vim.bo.commentstring = "// %s"
-    -- refresh codelens for semantic highlighting
+    -- refresh codelens
     vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
       group = flix_lsp,
       buffer = args.buf,
