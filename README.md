@@ -14,7 +14,8 @@
 ## installation
 
 - using your package manager of choice pass in the repo
-    - "flix/flix.nvim"
+    - "flix/nvim"
+    - or if using the dev fork directly use this url
 
 ## LSP
 
